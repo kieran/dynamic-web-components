@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Dynamic Web Components</title>
+    <meta name="author" content="Kieran Huggins">
+
+    <style type="text/css">
+      blue-box, red-box {
+        display: inline-block;
+        height: 100px;
+        width: 100px;
+        margin: 50px;
+        color: white;
+      }
+
+      blue-box {
+        background: blue;
+      }
+
+      red-box {
+        background: red;
+      }
+    </style>
+
+  </head>
+  <body>
+    <script>
+      const alreadyLoaded = new Set
+
+      const ensure = (...tagNames) => {
+        for (let tagName of tagNames) {
+          // not a custom element, next
+          if (tagName.indexOf('-') === -1) continue
+          // we've already loaded this element, next
+          if (alreadyLoaded.has(tagName)) continue
+          // load the new element!
+          alreadyLoaded.add(tagName)
+          load(tagName)
+        }
+      }
+
+      const load = (tagName) => {
+        let el = document.createElement("script")
+        let res = new Promise((resolve, reject) => {
+          el.addEventListener("load", ev => { console.log(`${tagName} loaded!`) && resolve(null) })
+          el.addEventListener("error", ev => { reject(new Error(`failed to load ${tagName}`)) })
+        })
+        el.src = `/components/${tagName}.js`
+        console.log(`loading: ${tagName}...`)
+        document.head.appendChild(el)
+        return res
+      }
+
+      new MutationObserver((mutations) => {
+        ensure(...(new Set(mutations.map((mutation)=> mutation.target.tagName.toLowerCase()))))
+      }).observe(document.body, { subtree: true, childList: true })
+    </script>
+
+    <blue-box>blue-box</blue-box>
+
+    <blue-box>blue-box</blue-box>
+
+    <blue-box>blue-box</blue-box>
+
+    <red-box>red-box</red-box>
+
+    <red-box>red-box</red-box>
+  </body>
+</html>
